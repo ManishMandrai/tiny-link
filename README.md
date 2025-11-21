@@ -6,7 +6,6 @@ A fast and simple URL shortener service with click analytics — built using **N
 ## 🚀 Live Demo  
 🌍 https://tiny-link-xi-sandy.vercel.app/
 
-*(Replace above with your deployed link)*
 
 ---
 
