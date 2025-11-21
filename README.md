@@ -58,8 +58,9 @@ model Link {
   lastClicked DateTime?
   createdAt   DateTime @default(now())
 }
+```
 
-🔧 Local Development
+## 🔧 Local Development
 1️⃣ Clone repo
 git clone https://github.com/YOUR-USERNAME/tiny-link.git
 
