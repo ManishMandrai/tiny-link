@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TinyLink 🔗  
+A fast and simple URL shortener service with click analytics — built using **Next.js, Prisma, PostgreSQL (Neon)** and deployed on **Vercel**.
 
-## Getting Started
+---
 
-First, run the development server:
+## 🚀 Live Demo  
+🌍 https://tiny-link-xi-sandy.vercel.app/
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+---
+
+## ✨ Features
+
+| Feature | Status |
+|--------|:------:|
+| Shorten long URLs | ✔ |
+| Custom short codes | ✔ |
+| Redirect with click tracking | ✔ |
+| View link analytics | ✔ |
+| Delete links | ✔ |
+| Responsive UI | ✔ |
+| Health check endpoint | ✔ |
+
+---
+
+## 📊 Pages
+
+| Route | Description |
+|-------|-------------|
+| `/` | Dashboard — Create, List, Copy, Delete links |
+| `/stats/[code]` | Analytics page for each link |
+| `/[code]` | Public redirect to original URL |
+| `/api/links` | API for CRUD operations |
+| `/healthz` | Health check endpoint |
+
+---
+
+## 🧱 Tech Stack
+
+| Category | Tool |
+|---------|-----|
+| Frontend | Next.js 16 (App Router), React, Tailwind CSS |
+| Backend | Next.js Route Handlers |
+| Database | Neon PostgreSQL |
+| ORM | Prisma |
+| Hosting | Vercel |
+
+---
+
+## 🗄️ Database Schema (Prisma)
+
+```prisma
+model Link {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  url         String
+  clicks      Int      @default(0)
+  lastClicked DateTime?
+  createdAt   DateTime @default(now())
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🔧 Local Development
+1️⃣ Clone repo
+git clone https://github.com/YOUR-USERNAME/tiny-link.git
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+cd tiny-link
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+npm install
 
-## Learn More
+Create .env file:
+DATABASE_URL="YOUR_POSTGRES_DATABASE_URL"
 
-To learn more about Next.js, take a look at the following resources:
+Setup database
+npx prisma migrate dev --name init
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+npm run dev
