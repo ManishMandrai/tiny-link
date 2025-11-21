@@ -110,19 +110,19 @@ export default function Home() {
                 </a>
               </td>
               <td className="p-2 border text-center">{l.clicks}</td>
-              <td className="p-2 border text-center space-x-2">
+              <td className="p-4 border rounded-2xl text-center space-x-2">
                 <button
-                  className="px-2 bg-gray-200"
+                  className="px-4 py-1 bg-gray-200"
                   onClick={() => copyText(`${baseUrl}/${l.code}`)}
                 >
                   Copy
                 </button>
-                <Link href={`/stats/${l.code}`} className="px-2 bg-blue-500 text-white">
+                <Link href={`/stats/${l.code}`} className="px-4 py-1 bg-blue-500 text-white">
                   Stats
                 </Link>
 
                 <button
-                  className="px-2 bg-red-500 text-white"
+                  className="px-4 py-1 bg-red-500 text-white"
                   onClick={() => deleteLink(l.code)}
                 >
                   Delete
