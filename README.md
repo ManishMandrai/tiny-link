@@ -83,6 +83,7 @@ tiny-link/
 
 ```
 
+```
 Local Development
 git clone https://github.com/YOUR-USERNAME/tiny-link.git
 cd tiny-link
@@ -104,10 +105,11 @@ Start dev server:
 
 -npm run dev
 
-
+```
 .
-
+```
 👤 Developer
 
 Dev Manish
 https://devmanish.com
+```
