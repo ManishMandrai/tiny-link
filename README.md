@@ -61,7 +61,8 @@ model Link {
 
 ```
 # Project Structure
-tiny-link/
+
+``tiny-link/
 │
 ├── app/
 │   ├── api/
@@ -78,7 +79,7 @@ tiny-link/
 ├── styles/               → Global styles
 └── package.json
 
-
+``
 
 Local Development
 git clone https://github.com/YOUR-USERNAME/tiny-link.git
