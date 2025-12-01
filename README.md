@@ -60,6 +60,8 @@ model Link {
   lastClicked DateTime?
   createdAt   DateTime @default(now())
 }
+
+```
 🏗️ Project Structure
 pgsql
 Copy code
