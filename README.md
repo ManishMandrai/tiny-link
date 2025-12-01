@@ -59,7 +59,7 @@ model Link {
   createdAt   DateTime @default(now())
 }
 
-
+```
 # Project Structure
 tiny-link/
 │
