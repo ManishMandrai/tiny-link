@@ -1,21 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-const CODE_REGEX = /^[A-Za-z0-9]{3,8}$/;
-
-function validateUrl(url: string) {
-  try {
-    const u = new URL(url);
-    return u.protocol === "http:" || u.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-function generateCode() {
-  // simple random 6-char code [a-z0-9]
-  return Math.random().toString(36).slice(2, 8);
-}
+import { CODE_REGEX, validateUrl, generateCode } from "@/lib/link-utils";
 
 // POST /api/links  -> create short link
 export async function POST(req: Request) {

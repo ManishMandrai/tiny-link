@@ -1,0 +1,355 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+new file mode 100644
+index 0000000..070495a
+--- /dev/null
++++ b/.github/workflows/ci.yml
+@@ -0,0 +1,29 @@
++name: CI
++
++on:
++  push:
++    branches: [master]
++  pull_request:
++    branches: [master]
++
++jobs:
++  test:
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++
++      - uses: actions/setup-node@v4
++        with:
++          node-version: 20
++          cache: "npm"
++
++      - run: npm ci
++
++      - name: Generate Prisma client
++        run: npx prisma generate
++
++      - name: Lint
++        run: npm run lint
++
++      - name: Test
++        run: npm run test:ci
+diff --git a/jest.config.js b/jest.config.js
+new file mode 100644
+index 0000000..df5df8a
+--- /dev/null
++++ b/jest.config.js
+@@ -0,0 +1,15 @@
++const nextJest = require("next/jest");
++
++const createJestConfig = nextJest({ dir: "./" });
++
++/** @type {import('jest').Config} */
++const customJestConfig = {
++  testEnvironment: "node",
++  moduleDirectories: ["node_modules", "<rootDir>/"],
++  testPathIgnorePatterns: ["<rootDir>/.next/", "<rootDir>/node_modules/"],
++  moduleNameMapper: {
++    "^@/(.*)$": "<rootDir>/src/$1",
++  },
++};
++
++module.exports = createJestConfig(customJestConfig);
+diff --git a/package.json b/package.json
+index 3c81373..ab4e4ff 100644
+--- a/package.json
++++ b/package.json
+@@ -4,9 +4,11 @@
+   "private": true,
+   "scripts": {
+     "dev": "next dev",
+-   "build": "prisma generate && next build",
++    "build": "prisma generate && next build",
+     "start": "next start",
+-    "lint": "eslint"
++    "lint": "eslint",
++    "test": "jest",
++    "test:ci": "jest --ci --coverage"
+   },
+   "dependencies": {
+     "@prisma/client": "^5.16.0",
+@@ -17,11 +19,13 @@
+   },
+   "devDependencies": {
+     "@tailwindcss/postcss": "^4",
++    "@types/jest": "^30.0.0",
+     "@types/node": "^20",
+     "@types/react": "^19",
+     "@types/react-dom": "^19",
+     "eslint": "^9",
+     "eslint-config-next": "16.0.3",
++    "jest": "^30.4.2",
+     "prisma": "^5.16.0",
+     "tailwindcss": "^4",
+     "typescript": "^5"
+diff --git a/src/app/[code]/route.test.ts b/src/app/[code]/route.test.ts
+new file mode 100644
+index 0000000..490516c
+--- /dev/null
++++ b/src/app/[code]/route.test.ts
+@@ -0,0 +1,57 @@
++jest.mock("@/lib/prisma", () => ({
++  prisma: {
++    link: {
++      findUnique: jest.fn(),
++      update: jest.fn(),
++    },
++  },
++}));
++
++import { GET } from "./route";
++import { prisma } from "@/lib/prisma";
++
++const mockedFindUnique = prisma.link.findUnique as jest.Mock;
++const mockedUpdate = prisma.link.update as jest.Mock;
++
++beforeEach(() => {
++  jest.clearAllMocks();
++});
++
++function makeContext(code: string) {
++  return { params: Promise.resolve({ code }) };
++}
++
++describe("GET /[code] (redirect)", () => {
++  it("returns 404 when the code does not exist", async () => {
++    mockedFindUnique.mockResolvedValue(null);
++
++    const res = await GET(
++      new Request("http://localhost/missing"),
++      makeContext("missing")
++    );
++
++    expect(res.status).toBe(404);
++    expect(mockedUpdate).not.toHaveBeenCalled();
++  });
++
++  it("redirects to the original URL and increments the click count", async () => {
++    mockedFindUnique.mockResolvedValue({
++      code: "abc123",
++      url: "https://example.com",
++      clicks: 4,
++    });
++    mockedUpdate.mockResolvedValue({});
++
++    const res = await GET(
++      new Request("http://localhost/abc123"),
++      makeContext("abc123")
++    );
++
++    expect(res.status).toBe(302);
++    expect(res.headers.get("location")).toBe("https://example.com/");
++    expect(mockedUpdate).toHaveBeenCalledWith({
++      where: { code: "abc123" },
++      data: { clicks: { increment: 1 }, lastClicked: expect.any(Date) },
++    });
++  });
++});
+diff --git a/src/app/api/links/route.test.ts b/src/app/api/links/route.test.ts
+new file mode 100644
+index 0000000..4f10edf
+--- /dev/null
++++ b/src/app/api/links/route.test.ts
+@@ -0,0 +1,90 @@
++jest.mock("@/lib/prisma", () => ({
++  prisma: {
++    link: {
++      create: jest.fn(),
++      findMany: jest.fn(),
++    },
++  },
++}));
++
++import { POST, GET } from "./route";
++import { prisma } from "@/lib/prisma";
++
++const mockedCreate = prisma.link.create as jest.Mock;
++const mockedFindMany = prisma.link.findMany as jest.Mock;
++
++function makeRequest(body: unknown) {
++  return new Request("http://localhost/api/links", {
++    method: "POST",
++    body: JSON.stringify(body),
++  });
++}
++
++beforeEach(() => {
++  jest.clearAllMocks();
++});
++
++describe("POST /api/links", () => {
++  it("400s on missing/invalid URL", async () => {
++    const res = await POST(makeRequest({ url: "not-a-url" }));
++    expect(res.status).toBe(400);
++    expect(mockedCreate).not.toHaveBeenCalled();
++  });
++
++  it("400s on invalid custom code format", async () => {
++    const res = await POST(
++      makeRequest({ url: "https://example.com", code: "a" })
++    );
++    expect(res.status).toBe(400);
++    expect(mockedCreate).not.toHaveBeenCalled();
++  });
++
++  it("creates a link with a generated code when none is provided", async () => {
++    mockedCreate.mockResolvedValue({
++      id: "1",
++      url: "https://example.com",
++      code: "abc123",
++      clicks: 0,
++    });
++
++    const res = await POST(makeRequest({ url: "https://example.com" }));
++    const body = await res.json();
++
++    expect(res.status).toBe(201);
++    expect(body.code).toBe("abc123");
++    expect(mockedCreate).toHaveBeenCalledTimes(1);
++  });
++
++  it("returns 409 when the code already exists (Prisma P2002)", async () => {
++    mockedCreate.mockRejectedValue({ code: "P2002" });
++
++    const res = await POST(
++      makeRequest({ url: "https://example.com", code: "taken1" })
++    );
++
++    expect(res.status).toBe(409);
++  });
++
++  it("returns 500 on unexpected errors", async () => {
++    mockedCreate.mockRejectedValue(new Error("db down"));
++
++    const res = await POST(makeRequest({ url: "https://example.com" }));
++
++    expect(res.status).toBe(500);
++  });
++});
++
++describe("GET /api/links", () => {
++  it("returns the list of links ordered by createdAt desc", async () => {
++    mockedFindMany.mockResolvedValue([{ id: "1", code: "abc123" }]);
++
++    const res = await GET();
++    const body = await res.json();
++
++    expect(res.status).toBe(200);
++    expect(body).toHaveLength(1);
++    expect(mockedFindMany).toHaveBeenCalledWith({
++      orderBy: { createdAt: "desc" },
++    });
++  });
++});
+diff --git a/src/app/api/links/route.ts b/src/app/api/links/route.ts
+index 9950dd8..51a3004 100644
+--- a/src/app/api/links/route.ts
++++ b/src/app/api/links/route.ts
+@@ -1,21 +1,6 @@
+ import { NextResponse } from "next/server";
+ import { prisma } from "@/lib/prisma";
+-
+-const CODE_REGEX = /^[A-Za-z0-9]{3,8}$/;
+-
+-function validateUrl(url: string) {
+-  try {
+-    const u = new URL(url);
+-    return u.protocol === "http:" || u.protocol === "https:";
+-  } catch {
+-    return false;
+-  }
+-}
+-
+-function generateCode() {
+-  // simple random 6-char code [a-z0-9]
+-  return Math.random().toString(36).slice(2, 8);
+-}
++import { CODE_REGEX, validateUrl, generateCode } from "@/lib/link-utils";
+ 
+ // POST /api/links  -> create short link
+ export async function POST(req: Request) {
+diff --git a/src/lib/link-utils.test.ts b/src/lib/link-utils.test.ts
+new file mode 100644
+index 0000000..c3ebeda
+--- /dev/null
++++ b/src/lib/link-utils.test.ts
+@@ -0,0 +1,54 @@
++import { validateUrl, generateCode, CODE_REGEX } from "./link-utils";
++
++describe("validateUrl", () => {
++  it("accepts valid http URLs", () => {
++    expect(validateUrl("http://example.com")).toBe(true);
++  });
++
++  it("accepts valid https URLs", () => {
++    expect(validateUrl("https://example.com/path?query=1")).toBe(true);
++  });
++
++  it("rejects malformed URLs", () => {
++    expect(validateUrl("not-a-url")).toBe(false);
++  });
++
++  it("rejects non-http(s) protocols", () => {
++    expect(validateUrl("ftp://example.com")).toBe(false);
++    expect(validateUrl("javascript:alert(1)")).toBe(false);
++  });
++
++  it("rejects empty string", () => {
++    expect(validateUrl("")).toBe(false);
++  });
++});
++
++describe("generateCode", () => {
++  it("generates a 6-character alphanumeric code", () => {
++    const code = generateCode();
++    expect(code).toHaveLength(6);
++    expect(CODE_REGEX.test(code)).toBe(true);
++  });
++
++  it("generates different codes across calls (probabilistic)", () => {
++    const codes = new Set(Array.from({ length: 20 }, () => generateCode()));
++    expect(codes.size).toBeGreaterThan(1);
++  });
++});
++
++describe("CODE_REGEX", () => {
++  it("accepts 3-8 char alphanumeric codes", () => {
++    expect(CODE_REGEX.test("abc")).toBe(true);
++    expect(CODE_REGEX.test("abcd1234")).toBe(true);
++  });
++
++  it("rejects codes shorter than 3 or longer than 8 chars", () => {
++    expect(CODE_REGEX.test("ab")).toBe(false);
++    expect(CODE_REGEX.test("abcd12345")).toBe(false);
++  });
++
++  it("rejects codes with special characters", () => {
++    expect(CODE_REGEX.test("abc-123")).toBe(false);
++    expect(CODE_REGEX.test("abc_123")).toBe(false);
++  });
++});
+diff --git a/src/lib/link-utils.ts b/src/lib/link-utils.ts
+new file mode 100644
+index 0000000..03b3b7b
+--- /dev/null
++++ b/src/lib/link-utils.ts
+@@ -0,0 +1,15 @@
++export const CODE_REGEX = /^[A-Za-z0-9]{3,8}$/;
++
++export function validateUrl(url: string): boolean {
++  try {
++    const u = new URL(url);
++    return u.protocol === "http:" || u.protocol === "https:";
++  } catch {
++    return false;
++  }
++}
++
++export function generateCode(): string {
++  // simple random 6-char code [a-z0-9]
++  return Math.random().toString(36).slice(2, 8);
++}
