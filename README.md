@@ -1,34 +1,32 @@
-# TinyLink 🔗  
-A fast and simple URL shortener service with click analytics — built using **Next.js, Prisma, PostgreSQL (Neon)** and deployed on **Vercel**.
+# 🔗 TinyLink  
+A fast and reliable URL shortener with built-in click analytics — built using **Next.js, Prisma, PostgreSQL (Neon)** and deployed on **Vercel**.
 
 ---
 
 ## 🚀 Live Demo  
-🌍 https://tiny-link-xi-sandy.vercel.app/
-
+👉 https://tiny-link-xi-sandy.vercel.app/
 
 ---
 
 ## ✨ Features
-
-| Feature | Status |
-|--------|:------:|
-| Shorten long URLs | ✔ |
-| Custom short codes | ✔ |
-| Redirect with click tracking | ✔ |
-| View link analytics | ✔ |
-| Delete links | ✔ |
-| Responsive UI | ✔ |
-| Health check endpoint | ✔ |
+- Shorten long URLs instantly  
+- Custom short codes  
+- Redirect with click tracking  
+- Analytics page for each link  
+- Delete links  
+- Responsive dashboard UI  
+- CRUD API routes  
+- Health check endpoint  
+- Edge-fast redirects  
 
 ---
 
-## 📊 Pages
+## 📊 Routes Overview
 
 | Route | Description |
 |-------|-------------|
 | `/` | Dashboard — Create, List, Copy, Delete links |
-| `/stats/[code]` | Analytics page for each link |
+| `/stats/[code]` | Analytics page showing clicks & stats |
 | `/[code]` | Public redirect to original URL |
 | `/api/links` | API for CRUD operations |
 | `/healthz` | Health check endpoint |
@@ -37,13 +35,15 @@ A fast and simple URL shortener service with click analytics — built using **N
 
 ## 🧱 Tech Stack
 
-| Category | Tool |
-|---------|-----|
-| Frontend | Next.js 16 (App Router), React, Tailwind CSS |
+| Category | Technology |
+|----------|------------|
+| Framework | Next.js 16 (App Router) |
+| Frontend | React, Tailwind CSS |
 | Backend | Next.js Route Handlers |
 | Database | Neon PostgreSQL |
 | ORM | Prisma |
-| Hosting | Vercel |
+| Deployment | Vercel |
+| Utilities | Zod, UUID |
 
 ---
 
@@ -58,20 +58,58 @@ model Link {
   lastClicked DateTime?
   createdAt   DateTime @default(now())
 }
+
 ```
 
-## 🔧 Local Development
-1️⃣ Clone repo
-git clone https://github.com/YOUR-USERNAME/tiny-link.git
+```
+# Project Structure
 
+tiny-link/
+│
+├── app/
+│   ├── api/
+│   │   └── links/        → CRUD API handlers
+│   ├── stats/            → Analytics pages
+│   ├── [code]/           → Redirect logic
+│   └── page.tsx          → Dashboard
+│
+├── prisma/
+│   └── schema.prisma     → DB schema
+│
+├── components/           → UI components
+├── lib/                  → Prisma client, utils
+├── styles/               → Global styles
+└── package.json
+
+```
+
+```
+Local Development
+git clone https://github.com/YOUR-USERNAME/tiny-link.git
 cd tiny-link
 
-npm install
+-npm install
 
-Create .env file:
-DATABASE_URL="YOUR_POSTGRES_DATABASE_URL"
 
-Setup database
-npx prisma migrate dev --name init
+Create .env:
 
-npm run dev
+-DATABASE_URL="YOUR_POSTGRES_DATABASE_URL"
+
+
+Run migrations:
+
+-npx prisma migrate dev --name init
+
+
+Start dev server:
+
+-npm run dev
+
+```
+.
+```
+👤 Developer
+
+Dev Manish
+https://devmanish.com
+```
